@@ -24,16 +24,13 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "movie_reviews.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(BASE_DIR, "movie_reviews.db"))
 
 app = Flask(__name__)
-app.secret_key = "change-this-secret-key-in-production"  # used to sign session cookies
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-fallback-key")  # used to sign session cookies
 
 # ----------------------------------------------------------------------
-# Default movie catalogue. Seeded into the DB on first run so an admin
-# can add/remove movies later without touching code. Posters are CSS
-# gradient cards with an emoji glyph (defined in style.css) so the app
-# has zero external image dependency.
+# Default movie catalogue.
 # ----------------------------------------------------------------------
 DEFAULT_MOVIES = [
     ("Galaxy Warriors", 2024, "poster-1", "🚀", "Sci-fi / Action"),
@@ -46,7 +43,6 @@ DEFAULT_MOVIES = [
 
 # ----------------------------------------------------------------------
 # Weighted keyword based sentiment analyzer.
-# (Kept dependency-free so the app runs anywhere without internet access.)
 # ----------------------------------------------------------------------
 POSITIVE_WORDS = {
     "good": 1, "great": 2, "excellent": 2, "amazing": 2, "awesome": 2,
@@ -76,8 +72,6 @@ NEGATIONS = {"not", "no", "never", "n't", "isn't", "wasn't", "didn't", "don't", 
 
 
 def analyze_sentiment(text: str, rating: int = None) -> str:
-    """Return 'Positive', 'Neutral' or 'Negative' for the given review text.
-    A star rating (if provided) acts as a tie-breaker / sanity check."""
     tokens = re.findall(r"[a-z']+", (text or "").lower())
     score = 0
     matched = False
@@ -97,8 +91,6 @@ def analyze_sentiment(text: str, rating: int = None) -> str:
             value = int(value * 1.5) or value
         score += value
 
-    # Fold in the star rating as a signal so a 5-star "meh" review still
-    # reads Positive, and a 1-star "fine I guess" still reads Negative.
     if rating:
         if rating >= 4:
             score += 2
@@ -116,9 +108,6 @@ def analyze_sentiment(text: str, rating: int = None) -> str:
     return "Neutral"
 
 
-# ----------------------------------------------------------------------
-# Database helpers
-# ----------------------------------------------------------------------
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DB_PATH)
@@ -186,9 +175,6 @@ def init_db():
     db.close()
 
 
-# ----------------------------------------------------------------------
-# Auth helpers
-# ----------------------------------------------------------------------
 def login_required(view_func):
     def wrapper(*args, **kwargs):
         if not session.get("user_id"):
@@ -231,9 +217,6 @@ def inject_globals():
     return {"current_username": session.get("username"), "is_admin": session.get("is_admin", False)}
 
 
-# ----------------------------------------------------------------------
-# Routes: Auth
-# ----------------------------------------------------------------------
 @app.route("/")
 def index():
     if session.get("user_id"):
@@ -307,9 +290,6 @@ def logout():
     return redirect(url_for("login"))
 
 
-# ----------------------------------------------------------------------
-# Routes: Movies + Reviews
-# ----------------------------------------------------------------------
 def get_movies():
     db = get_db()
     return db.execute("SELECT * FROM movies ORDER BY id").fetchall()
@@ -322,7 +302,6 @@ def get_movie_or_404(movie_id):
 
 
 def get_stats():
-    """Return {movie_id: {'positive', 'neutral', 'negative', 'avg_rating', 'total'}}."""
     db = get_db()
     stats = {}
     for m in get_movies():
@@ -458,7 +437,6 @@ def delete_review(movie_id):
     return redirect(url_for("movie_detail", movie_id=movie_id))
 
 
-# Kept for backwards compatibility with the original multi-review form.
 @app.route("/submit_review", methods=["POST"])
 @login_required
 def submit_review():
@@ -501,9 +479,6 @@ def submit_review():
     return redirect(url_for("movies"))
 
 
-# ----------------------------------------------------------------------
-# Routes: Admin
-# ----------------------------------------------------------------------
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
@@ -583,4 +558,9 @@ def admin_delete_user(user_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
+else:
+    # Also runs when imported by a WSGI server like gunicorn
+    init_db()
