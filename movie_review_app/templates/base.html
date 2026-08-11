@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CineVoice{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% if current_username %}
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{{ url_for('movies') }}" class="brand">🎬 CineVoice</a>
+      <div class="nav-links">
+        <a href="{{ url_for('movies') }}">Movies</a>
+        {% if is_admin %}<a href="{{ url_for('admin_dashboard') }}">Admin</a>{% endif %}
+        <span class="nav-user">Hi, {{ current_username }}</span>
+        <a href="{{ url_for('logout') }}" class="btn-ghost">Log out</a>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">Built with Flask &middot; reviews classified on-device, no external APIs</footer>
+</body>
+</html>

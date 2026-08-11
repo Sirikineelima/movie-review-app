@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Log in · CineVoice{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">🎬 CineVoice</div>
+    <h1>Welcome back</h1>
+    <p class="auth-sub">Log in to rate and review movies.</p>
+    <form method="POST" action="{{ url_for('login') }}">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" value="{{ username }}" required autofocus>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit" class="btn-primary btn-block">Log in</button>
+    </form>
+    <p class="auth-switch">New here? <a href="{{ url_for('signup') }}">Create an account</a></p>
+    <p class="auth-hint">Tip: sign up with username <code>admin</code> to get admin access.</p>
+  </div>
+</div>
+{% endblock %}

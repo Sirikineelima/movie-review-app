@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.name }} · CineVoice{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('movies') }}">&larr; Back to movies</a>
+
+<div class="detail-head">
+  <div class="poster poster-lg {{ movie.poster_class }}">
+    <span class="poster-emoji">{{ movie.emoji }}</span>
+  </div>
+  <div class="detail-info">
+    <h1>{{ movie.name }}</h1>
+    <p class="movie-meta">{{ movie.year }} &middot; {{ movie.genre }}</p>
+    <div class="movie-stats movie-stats-lg">
+      <span class="stat stat-pos">▲ Positive {{ stats.positive }}</span>
+      <span class="stat stat-neu">■ Neutral {{ stats.neutral }}</span>
+      <span class="stat stat-neg">▼ Negative {{ stats.negative }}</span>
+      {% if stats.total %}
+      <span class="stat stat-avg">★ {{ stats.avg_rating }} average ({{ stats.total }} review{{ 's' if stats.total != 1 else '' }})</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="review-form-card">
+    <h2>{{ 'Edit your review' if my_review else 'Write a review' }}</h2>
+    <form method="POST" action="{{ url_for('submit_single_review', movie_id=movie.id) }}">
+      <div class="star-input" role="radiogroup" aria-label="Star rating">
+        {% for i in range(5, 0, -1) %}
+        <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if my_review and my_review.rating == i %}checked{% elif not my_review and i == 5 %}{% endif %}>
+        <label for="star{{ i }}" title="{{ i }} star">★</label>
+        {% endfor %}
+      </div>
+      <textarea name="review_text" rows="4" placeholder="What did you think of this movie?" required>{{ my_review.review_text if my_review else '' }}</textarea>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">{{ 'Update review' if my_review else 'Submit review' }}</button>
+      </div>
+    </form>
+    {% if my_review %}
+    <form method="POST" action="{{ url_for('delete_review', movie_id=movie.id) }}" class="delete-form"
+          onsubmit="return confirm('Delete your review for {{ movie.name }}?');">
+      <button type="submit" class="btn-danger-ghost">Delete my review</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="review-list">
+    <h2>All reviews ({{ reviews|length }})</h2>
+    {% if not reviews %}
+    <p class="empty-state">No reviews yet — be the first to share your thoughts!</p>
+    {% endif %}
+    {% for r in reviews %}
+    <div class="review-item">
+      <div class="review-item-head">
+        <span class="review-user">{{ r.username }}</span>
+        <span class="review-rating">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</span>
+        <span class="sentiment-pill sentiment-{{ r.sentiment|lower }}">{{ r.sentiment }}</span>
+      </div>
+      <p class="review-text">{{ r.review_text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

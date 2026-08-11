@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Movies · CineVoice{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Now showing</h1>
+  <p>Tap a movie to rate it, write a review, and see what everyone else thinks.</p>
+</div>
+
+<div class="movie-grid">
+  {% for movie in movies %}
+  {% set s = stats[movie.id] %}
+  {% set mine = my_reviews.get(movie.id) %}
+  <a class="movie-card" href="{{ url_for('movie_detail', movie_id=movie.id) }}">
+    <div class="poster {{ movie.poster_class }}">
+      <span class="poster-emoji">{{ movie.emoji }}</span>
+      {% if mine %}<span class="badge badge-reviewed">Your review ★{{ mine.rating }}</span>{% endif %}
+    </div>
+    <div class="movie-info">
+      <h3>{{ movie.name }}</h3>
+      <p class="movie-meta">{{ movie.year }} &middot; {{ movie.genre }}</p>
+      <div class="movie-stats">
+        <span class="stat stat-pos">▲ {{ s.positive }}</span>
+        <span class="stat stat-neu">■ {{ s.neutral }}</span>
+        <span class="stat stat-neg">▼ {{ s.negative }}</span>
+        {% if s.total %}
+        <span class="stat stat-avg">★ {{ s.avg_rating }} ({{ s.total }})</span>
+        {% else %}
+        <span class="stat stat-avg">No reviews yet</span>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

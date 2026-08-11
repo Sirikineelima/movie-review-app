@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Admin · CineVoice{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Admin dashboard</h1>
+  <p>Manage the movie catalogue, moderate reviews, and manage users.</p>
+</div>
+
+<div class="admin-section">
+  <h2>Add a movie</h2>
+  <form method="POST" action="{{ url_for('admin_add_movie') }}" class="admin-add-form">
+    <input type="text" name="name" placeholder="Movie name" required>
+    <input type="number" name="year" placeholder="Year" min="1900" max="2100" required style="max-width:110px">
+    <input type="text" name="genre" placeholder="Genre">
+    <input type="text" name="emoji" placeholder="🎬" style="max-width:80px">
+    <button type="submit" class="btn-primary">Add movie</button>
+  </form>
+</div>
+
+<div class="admin-section">
+  <h2>Movies ({{ movies|length }})</h2>
+  <table class="admin-table">
+    <thead><tr><th></th><th>Name</th><th>Year</th><th>Genre</th><th>Reviews</th><th>Avg ★</th><th></th></tr></thead>
+    <tbody>
+      {% for m in movies %}
+      {% set s = stats[m.id] %}
+      <tr>
+        <td class="cell-emoji">{{ m.emoji }}</td>
+        <td>{{ m.name }}</td>
+        <td>{{ m.year }}</td>
+        <td>{{ m.genre }}</td>
+        <td>{{ s.total }}</td>
+        <td>{{ s.avg_rating if s.total else '—' }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin_delete_movie', movie_id=m.id) }}"
+                onsubmit="return confirm('Delete {{ m.name }} and all its reviews?');">
+            <button type="submit" class="btn-danger-ghost btn-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-section">
+  <h2>All reviews ({{ reviews|length }})</h2>
+  <table class="admin-table">
+    <thead><tr><th>User</th><th>Movie</th><th>★</th><th>Sentiment</th><th>Review</th><th></th></tr></thead>
+    <tbody>
+      {% for r in reviews %}
+      <tr>
+        <td>{{ r.username }}</td>
+        <td>{{ r.movie_name }}</td>
+        <td>{{ r.rating }}</td>
+        <td><span class="sentiment-pill sentiment-{{ r.sentiment|lower }}">{{ r.sentiment }}</span></td>
+        <td class="cell-review">{{ r.review_text }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin_delete_review', review_id=r.id) }}"
+                onsubmit="return confirm('Delete this review?');">
+            <button type="submit" class="btn-danger-ghost btn-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-section">
+  <h2>Users ({{ users|length }})</h2>
+  <table class="admin-table">
+    <thead><tr><th>Username</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ 'Admin' if u.is_admin else 'Member' }}</td>
+        <td>{{ u.created_at[:10] }}</td>
+        <td>
+          {% if u.username != current_username %}
+          <form method="POST" action="{{ url_for('admin_delete_user', user_id=u.id) }}"
+                onsubmit="return confirm('Delete user {{ u.username }} and their reviews?');">
+            <button type="submit" class="btn-danger-ghost btn-sm">Delete</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
