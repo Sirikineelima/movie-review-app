@@ -4,15 +4,9 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn movie_review_app.app:app
     envVars:
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: DB_PATH
-        value: /data/movie_reviews.db
-    disk:
-      name: movie-review-data
-      mountPath: /data
-      sizeGB: 1
